@@ -96,6 +96,7 @@ function draw() {
   }
   if (gameS === "Hungry"){
     feed.show();
+     restock.show();
   }
 if (gameS != "Hungry"){
   feed.hide();
