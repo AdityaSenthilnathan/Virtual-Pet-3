@@ -1,185 +1,207 @@
-var dogIMG, dogIMG2, dog, foodS, foodStock, dataBase, foodObj;
-var feedTime = 0;
-var feedT = 0;
+var gameState = 0;
+var ground;
+var playercount = 0;
+var texts = [], text;
+var textsNumber = [];
+var form;
+var over = 0;
+var player;
+var check = 0;
+var rands;
+var points = 0;
+var flag = 0;
+var out = "false";
+var speed = 10;
+var allplayers;
+var index;
+var rands = [];
+var rands2 = [];
+var rands3 = [];
+var rands4 = [];
+var mario;
+var fakeRands = []
+var name;
 
-var hour = 0;
-var hourmin = 0;
-var garden, washroom, bedroom;
-var readState;
-var CgameState;
-var gameS = "";
-var h;
-var min; 
+var hurdle = [];
+var database;
+var game;
+var randomNumber;
 
-//var bark;
-
-
-const Engine = Matter.Engine;
-const World = Matter.World;
-const Bodies = Matter.Bodies;
-const Constraint = Matter.Constraint;
-const db = firebase.database();
-foodS = 0;
 function preload() {
-  //  soundFormats('mp3', 'ogg');
-  dogIMG = loadImage("images/Dog.png");
-  dogIMG2 = loadImage("images/happy dog.png");
-  garden = loadImage("images/Garden.png");
-  washroom = loadImage("images/Wash Room.png");
-  bedroom = loadImage("images/Bed Room.png");
-  //bark = loadSound("images/chasecog.mp3")
+  mario = loadAnimation("mario/mario1.png", "mario/mario2.png", "mario/mario3.png");
+  Hurdlespng = loadImage("Hurdle.png")
 
-
-  //dataBase = firebase.database();
-  //db = firebase.database().ref();
 }
+
+
 
 function setup() {
-  createCanvas(1000, 500);
-  foodObj = new Food(10, 200);
-  dog = createSprite(650, 250, 10, 10);
-  dog.addImage(dogIMG);
-  dog.scale = .1;
-  textSize(30);
-  fill("green");
-  stroke(10);
-  feed = createButton("Feed The Dog");
-  feed.position(800, 75);
+  //textMode(CENTER);
 
-  restock = createButton("Restock your food");
-  restock.position(920, 75);
-  feedTime = firebase.database().ref("FeedTime");
-  feedTime.on("value", readTime);
+  jump = loadSound('/jump.mp3');
+  gameOver = loadSound('/gameOver.wav');
+  stageClear = loadSound('/stageclear.wav');
+  point = loadSound('/point.mp3');
+  /*var rand1 = random(0,7);
+  var rand1 = random(0,7);
+  var rand1 = random(0,7);*/
 
-  foodStock = firebase.database().ref("Food");
-  foodStock.on("value", readStock);
 
-  readState = firebase.database().ref("gameState");
+  database = firebase.database();
+  ground = createSprite(5000, 240, 10000, 1);
   
-  readState.on("value", function(data) {
-    gameS = data.val();
-  });
-  
-  //database = firebase.database();
+  for (var k = 0; k < 10; k++) {
+    randomNumber = Math.round(random(1, 2));
 
+    if (randomNumber === 1) {
+      rands[k] = Math.round(random(20, 26));
+      fakeRands[k] = Math.round(random(1, 15));
+
+
+      texts[k] = rands[k] + " - " + (rands[k] - 17);
+      textsNumber[k] = rands[k] - (rands[k] - 17);
+    }
+    else {
+      rands[k] = Math.round(random(20, 26));
+      fakeRands[k] = Math.round(random(1, 15));
+      texts[k] = rands[k] + " - " + (rands[k] - fakeRands[k]);
+      textsNumber[k] = rands[k] - (rands[k] - fakeRands[k]);
+
+    }
+
+  }
+
+
+
+
+
+
+
+
+  createCanvas(displayWidth, displayHeight - 150);
+  form = new Form();
+  player = new Player();
+  game = new Game();
+  fill(152, 5, 5);
+
+  
+
+
+  //createSprite(400, 200, 50, 50);
 }
-
 
 function draw() {
 
-  //foodObj.bedroom();
-  background(46, 139, 87);
-  drawSprites();
-  gettime();
-
-  //feedT = feedTime.val();
-
-  feed.mousePressed(feedDog);
-  restock.mousePressed(restockFood);
-
-  foodObj.display();
+  background(100);
 
 
-  var f = feedT - 12;
-  text("Food Avalible: " + foodS, 20, 55);
-
-
-  if (feedT >= 12) {
-    text("Last Fed : " + f + " PM", 20, 85);
-
-  } else if (feedT == 0) {
-    text("Last Fed : 12 AM", 20, 85);
-
-  } else {
-    text("Last Fed : " + feedT + " AM", 20, 85);
-
-  }
-  if (gameS === "Hungry"){
-    feed.show();
-     restock.show();
-  }
-if (gameS != "Hungry"){
-  feed.hide();
-  restock.hide();
-  if (hour === (feedT + 1)) {
-    update("Playing");
-    foodObj.garden();
-  }
-  else if (hour === (feedT + 2)) {
-    update("Sleeping");
-    foodObj.bedroom();
-
-  } else if (hour > (feedT + 2) && hour < (feedT + 4)) {
-    update("Bathing");
-    foodObj.washroom();
-  }
-  else if  (hour >= (feedT + 4)){
-    update("Hungry");
-    foodObj.display();
-  }
-}
-
-   /*
- if (min%4 === 0) {
-    update("Playing");
-    foodObj.garden();
-  }
-  else if (min%4 === 1) {
-    update("Sleeping");
-    foodObj.bedroom();
-
-  } else if (min%4 === 2) {
-    update("Bathing");
-    foodObj.washroom();
-  }
-  else {
-    update("Hungry");
-    foodObj.display();
-  }
-  */
-   
-}
-
-function readStock(data) {
-  foodS = data.val();
-}
-function readTime(data) {
-  feedT =  parseInt(data.val());
-}
-function restockFood() {
-  dog.addImage(dogIMG);
-  foodObj.updateFoodStock(foodS);
-}
-
-function feedDog() {
-  update("Feed");
-  // bark.play();
-  feedT = hour;
-  firebase.database().ref('/').update({
-    FeedTime: feedT
-  });
-
-  foodObj.deductFood(foodS);
-  dog.addImage(dogIMG2);
-}
-
-async function gettime() {
-  var response = await fetch("https://worldtimeapi.org/api/timezone/America/Los_Angeles");
-  var time = await response.json();
-  var dateTime = time.datetime;
-  h = dateTime.slice(14, 15);
-  //hour = dateTime.slice(11, 13);
-  hourmin = dateTime.slice(11, 13);
-  hour = parseInt(dateTime.slice(11,13));
   
+
+  player.player.collide(ground);
+  player.player.velocityY = player.player.velocityY + 0.5
+
+
+  if (gameState === 0) {
+    game.start();
+
+    textSize(23);
+    text("Hurdles Math Game!!", 100, 100);
+    textSize(13);
+    text("Enter Your Name", 100, 200);
+
+    //form.display();
+
+  }
+
+  if (gameState === 1) {
+    if (flag === 0){
+    for (var c = 0; c < 3; c++) {
+      
+      hurdle[c] = new Hurdles((c * 3000) + 500);
+      hurdle[c].createHurdles();
+
+
+    }
+    flag = 1
+  }
+  for (var c = 0; c < 3; c++) {
+  hurdle[c].createtext((c * 3000) + 500);
+  }
+    game.play();
+    textSize(20);
+    text(points, player.player.position.x - 20, 50);
+    camera.position.x = player.player.x + 500;
+
+  
+
+
+    // textsNumber[4] = rand5 - (rand5 - 18);
+
+    text(name, player.player.position.x - 20, player.player.position.y - 50)
+    //hurdle1.createHurdles();
+    //hurdle2 = new Hurdles(500);
+    //hurdle3 = new Hurdles(500);
+    //hurdle4 = new Hurdles(500);
+    //hurdle5 = new Hurdles(500);
+    if (out === "false") {
+      text("17", player.player.x + 500, 100)
+
+    }
+    for (var b = 0; b < 2; b++) {
+
+      for (var a = 0; a < hurdle[b].hurdles.length; a++) {
+        if (player.player.isTouching(hurdle[b].hurdles[a]) && textsNumber[a] != 17) {
+          if (over === 0) {
+            gameOver.play();
+            over = 1;
+          }
+          out = "true"
+          player.player.velocityX = 0;
+          text("Wrong, the correct answer to " + texts[a] + " is: " + textsNumber[a] + ", not 17", player.player.x + 200, 100);
+
+        }
+        if (player.player.isTouching(hurdle[b].hurdles[a]) && textsNumber[a] === 17 && hurdle[b].hurdles[a].x === player.player.x) {
+          //speed = speed + 1;
+          player.player.velocityX = speed;
+          points++;
+
+
+          point.play();
+
+
+        }
+      }
+    }
+
+
+  }
+  drawSprites();
 }
 
+function keyPressed() {
+  if (out === "false") {
+    if (keyCode === RIGHT_ARROW && gameState === 1) {
+      //player.distance = player.distance + speed;
+      //player.player.x = player.distance;
 
-function update(x) {
+      player.player.velocityX = speed;
+      player.updateplayerinfo();
 
-  firebase.database().ref('/').update({
-    gameState: x
-  });
+    }
+    if (keyCode === UP_ARROW && gameState === 1) {
+      jump.play();
+      player.player.velocityY = -10
+      player.updateplayerinfo();
+
+
+    }
+
+    /* if (keyCode === DOWN_ARROW) {
+       jump.play();  
+       player.player.velocityY = 10
+ 
+     }*/
+  }
+
 
 }
-
